@@ -1,5 +1,6 @@
 {
   "expo": {
+    "owner": "faishion-ai",
     "name": "social-media-app",
     "slug": "social-media-app",
     "version": "1.0.0",
@@ -16,7 +17,8 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "package": "com.faishion.socialmediaapp"
     },
     "web": {
       "bundler": "metro",
@@ -38,6 +40,12 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "51e08e3a-cc3f-424f-9469-1c0d75eed651"
+      }
     }
   }
 }
