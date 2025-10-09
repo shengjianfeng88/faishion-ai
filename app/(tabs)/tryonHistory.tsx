@@ -37,7 +37,9 @@ export default function WardrobeScreen() {
       try {
         setLoading(true);
         const response = await axios.get(`https://tryon-history.faishion.ai/history?user_id=${userId}`);
-        setItems(response.data);
+        // Ensure response.data is an array
+        const dataArray = Array.isArray(response.data) ? response.data : [];
+        setItems(dataArray);
         setError(null);
       } catch (e) {
         console.error("Failed to fetch wardrobe history:", e);
