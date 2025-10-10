@@ -1,6 +1,6 @@
 import { COLORS } from "@/constants/theme";
 import axios from "axios";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   FlatList,
   KeyboardAvoidingView,
@@ -10,6 +10,7 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  SafeAreaView,
 } from "react-native";
 
 const DIFY_API_ENDPOINT = "https://api.dify.ai/v1";
@@ -24,6 +25,15 @@ export default function Chatbot() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState("");
   const [loading, setLoading] = useState(false);
+  const flatListRef = useRef<FlatList>(null);
+
+  useEffect(() => {
+    if (messages.length > 0) {
+      setTimeout(() => {
+        flatListRef.current?.scrollToEnd({ animated: true });
+      }, 100);
+    }
+  }, [messages]);
 
   const sendMessage = async () => {
     if (!inputText.trim() || loading) return;
@@ -75,71 +85,80 @@ export default function Chatbot() {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      keyboardVerticalOffset={100}
-    >
-      <View style={styles.header}>
-        <Text style={styles.headerText}>Fashion AI Assistant</Text>
-      </View>
-
-      {messages.length === 0 ? (
-        <View style={styles.emptyState}>
-          <Text style={styles.emptyText}>Ask me anything about fashion!</Text>
-          <Text style={styles.emptySubtext}>
-            Style advice, outfit suggestions, trend insights...
-          </Text>
+    <SafeAreaView style={styles.safeArea}>
+      <KeyboardAvoidingView
+        style={styles.container}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={0}
+      >
+        <View style={styles.header}>
+          <Text style={styles.headerText}>Fashion AI Assistant</Text>
         </View>
-      ) : (
-        <FlatList
-          data={messages}
-          keyExtractor={(_, index) => index.toString()}
-          style={styles.messageList}
-          renderItem={({ item }) => (
-            <View
-              style={[
-                styles.messageBubble,
-                item.role === "user" ? styles.userMessage : styles.botMessage,
-              ]}
-            >
-              <Text
+
+        {messages.length === 0 ? (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyText}>Ask me anything about fashion!</Text>
+            <Text style={styles.emptySubtext}>
+              Style advice, outfit suggestions, trend insights...
+            </Text>
+          </View>
+        ) : (
+          <FlatList
+            ref={flatListRef}
+            data={messages}
+            keyExtractor={(_, index) => index.toString()}
+            style={styles.messageList}
+            contentContainerStyle={styles.messageListContent}
+            renderItem={({ item }) => (
+              <View
                 style={[
-                  styles.messageText,
-                  item.role === "user" && styles.userMessageText,
+                  styles.messageBubble,
+                  item.role === "user" ? styles.userMessage : styles.botMessage,
                 ]}
               >
-                {item.content}
-              </Text>
-            </View>
-          )}
-        />
-      )}
+                <Text
+                  style={[
+                    styles.messageText,
+                    item.role === "user" && styles.userMessageText,
+                  ]}
+                >
+                  {item.content}
+                </Text>
+              </View>
+            )}
+          />
+        )}
 
-      <View style={styles.inputContainer}>
-        <TextInput
-          style={styles.input}
-          value={inputText}
-          onChangeText={setInputText}
-          placeholder="Type your message..."
-          placeholderTextColor={COLORS.grey}
-          editable={!loading}
-          onSubmitEditing={sendMessage}
-          returnKeyType="send"
-        />
-        <TouchableOpacity
-          style={[styles.sendButton, loading && styles.sendButtonDisabled]}
-          onPress={sendMessage}
-          disabled={loading || !inputText.trim()}
-        >
-          <Text style={styles.sendButtonText}>{loading ? "..." : "Send"}</Text>
-        </TouchableOpacity>
-      </View>
-    </KeyboardAvoidingView>
+        <View style={styles.inputContainer}>
+          <TextInput
+            style={styles.input}
+            value={inputText}
+            onChangeText={setInputText}
+            placeholder="Type your message..."
+            placeholderTextColor={COLORS.grey}
+            editable={!loading}
+            onSubmitEditing={sendMessage}
+            returnKeyType="send"
+            multiline={false}
+          />
+          <TouchableOpacity
+            style={[styles.sendButton, loading && styles.sendButtonDisabled]}
+            onPress={sendMessage}
+            disabled={loading || !inputText.trim()}
+          >
+            <Text style={styles.sendButtonText}>{loading ? "..." : "Send"}</Text>
+          </TouchableOpacity>
+        </View>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: COLORS.background,
+  },
   container: {
     flex: 1,
     backgroundColor: COLORS.background,
@@ -175,7 +194,10 @@ const styles = StyleSheet.create({
   },
   messageList: {
     flex: 1,
+  },
+  messageListContent: {
     padding: 12,
+    paddingBottom: 80,
   },
   messageBubble: {
     padding: 12,
@@ -201,6 +223,8 @@ const styles = StyleSheet.create({
   inputContainer: {
     flexDirection: "row",
     padding: 12,
+    paddingBottom: 16,
+    marginBottom: 100,
     backgroundColor: COLORS.surface,
     borderTopWidth: 1,
     borderTopColor: COLORS.surfaceLight,
@@ -215,6 +239,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     backgroundColor: COLORS.background,
     color: COLORS.white,
+    maxHeight: 100,
   },
   sendButton: {
     marginLeft: 8,
@@ -223,6 +248,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     justifyContent: "center",
     alignItems: "center",
+    minHeight: 44,
   },
   sendButtonDisabled: {
     backgroundColor: COLORS.grey,
