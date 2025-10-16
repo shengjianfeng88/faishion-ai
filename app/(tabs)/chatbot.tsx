@@ -14,7 +14,7 @@ import {
 } from "react-native";
 
 const DIFY_API_ENDPOINT = "https://api.dify.ai/v1";
-const DIFY_API_KEY = "app-RQZcF0th7nAnNuIzM6BtmG9J";
+const DIFY_API_KEY = "app-1EOogY6KvyE1kyLUBMGOok2d";
 
 interface Message {
   role: "user" | "assistant";
