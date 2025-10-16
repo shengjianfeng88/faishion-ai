@@ -63,7 +63,7 @@ export default function WardrobeScreen() {
         // Transform API data to match HistoryItem interface
         const transformedData = dataArray.map((item: any, index: number) => ({
           record_id: item.productInfo?.product_url || `item-${index}`,
-          result_image_url: item.tryOnImages?.[0] || '',
+          result_image_url: item.tryOnImages?.[0]?.url || item.tryOnImages?.[0] || '',
           timestamp: item.latestTryOnDate || new Date().toISOString(),
           product_info: {
             brand_name: item.productInfo?.brand_name || 'Unknown Brand',
