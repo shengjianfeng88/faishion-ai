@@ -22,7 +22,7 @@ const WardrobeItem: React.FC<WardrobeItemProps> = ({ item }) => {
           {item.product_info.brand_name} - {item.product_info.product_name}
         </Text>
         <Text style={styles.priceText}>
-          {item.product_info.currency}{item.product_info.price.toFixed(2)} - Size M
+          {item.product_info.currency}{Math.floor(item.product_info.price)}
         </Text>
       </View>
     </View>
