@@ -11,7 +11,10 @@ import {
   TouchableOpacity,
   View,
   SafeAreaView,
+  useWindowDimensions,
+  Linking,
 } from "react-native";
+import RenderHtml from "react-native-render-html";
 
 const DIFY_API_ENDPOINT = "https://api.dify.ai/v1";
 const DIFY_API_KEY = "app-1EOogY6KvyE1kyLUBMGOok2d";
@@ -26,6 +29,7 @@ export default function Chatbot() {
   const [inputText, setInputText] = useState("");
   const [loading, setLoading] = useState(false);
   const flatListRef = useRef<FlatList>(null);
+  const { width } = useWindowDimensions();
 
   useEffect(() => {
     if (messages.length > 0) {
@@ -84,6 +88,50 @@ export default function Chatbot() {
     }
   };
 
+  const renderMessageContent = (item: Message) => {
+    if (item.role === "user") {
+      return (
+        <Text
+          style={[styles.messageText, styles.userMessageText]}
+        >
+          {item.content}
+        </Text>
+      );
+    }
+
+    // For assistant messages, render HTML
+    return (
+      <RenderHtml
+        contentWidth={width * 0.8}
+        source={{ html: item.content }}
+        tagsStyles={{
+          body: {
+            color: COLORS.white,
+            fontSize: 16,
+          },
+          a: {
+            color: '#60a5fa',
+            textDecorationLine: 'underline',
+          },
+          p: {
+            marginVertical: 4,
+          },
+        }}
+        renderersProps={{
+          a: {
+            onPress: (event, href) => {
+              if (href) {
+                Linking.openURL(href).catch(err => 
+                  console.error("Failed to open link:", err)
+                );
+              }
+            },
+          },
+        }}
+      />
+    );
+  };
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <KeyboardAvoidingView
@@ -116,14 +164,7 @@ export default function Chatbot() {
                   item.role === "user" ? styles.userMessage : styles.botMessage,
                 ]}
               >
-                <Text
-                  style={[
-                    styles.messageText,
-                    item.role === "user" && styles.userMessageText,
-                  ]}
-                >
-                  {item.content}
-                </Text>
+                {renderMessageContent(item)}
               </View>
             )}
           />
