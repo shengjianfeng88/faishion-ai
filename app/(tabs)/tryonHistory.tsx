@@ -23,74 +23,106 @@ export default function WardrobeScreen() {
   const [error, setError] = useState<string | null>(null);
   const [sortOption, setSortOption] = useState('Most Recent');
   const [showSortOptions, setShowSortOptions] = useState(false);
+  
+  // Pagination state
+  const [skip, setSkip] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+
+  const LIMIT = 10; // Items per page
 
   useEffect(() => {
-    const fetchHistory = async () => {
-      if (!userId) {
-        console.log("❌ No userId found");
-        setLoading(false);
-        setError("User not logged in.");
-        return;
+    fetchHistory(true);
+  }, [userId]);
+
+  const fetchHistory = async (isInitial: boolean = false) => {
+    if (!userId) {
+      console.log("❌ No userId found");
+      setLoading(false);
+      setError("User not logged in.");
+      return;
+    }
+
+    // Don't fetch if already loading more or no more items
+    if (!isInitial && (loadingMore || !hasMore)) {
+      return;
+    }
+    
+    try {
+      const currentSkip = isInitial ? 0 : skip;
+      
+      console.log("🔍 Fetching Try On History");
+      console.log("📧 User ID:", userId);
+      console.log("📄 Skip:", currentSkip, "Limit:", LIMIT);
+      console.log("🔗 API URL:", `https://tryon-history.faishion.ai/history?user_id=${userId}&skip=${currentSkip}&limit=${LIMIT}`);
+      
+      if (isInitial) {
+        setLoading(true);
+        setSkip(0);
+        setHasMore(true);
+      } else {
+        setLoadingMore(true);
+      }
+
+      const response = await axios.get(
+        `https://tryon-history.faishion.ai/history?user_id=${userId}&skip=${currentSkip}&limit=${LIMIT}`
+      );
+      
+      console.log("✅ Response received");
+      console.log("📦 Response status:", response.status);
+      
+      // Handle nested data structure - API returns {data: [...]}
+      const responseData = response.data.data || response.data;
+      const dataArray = Array.isArray(responseData) ? responseData : [];
+      
+      console.log("📦 Received items:", dataArray.length);
+      
+      // Transform API data to match HistoryItem interface
+      const transformedData = dataArray.map((item: any, index: number) => ({
+        record_id: item.productInfo?.product_url || `item-${currentSkip + index}`,
+        result_image_url: item.tryOnImages?.[0]?.url || item.tryOnImages?.[0] || '',
+        timestamp: item.latestTryOnDate || new Date().toISOString(),
+        product_info: {
+          brand_name: item.productInfo?.brand_name || 'Unknown Brand',
+          product_name: item.productInfo?.product_name || 'Unknown Product',
+          price: item.productInfo?.price || 0,
+          currency: item.productInfo?.currency || '$'
+        }
+      }));
+
+      console.log("✅ Transformed data ready:", transformedData.length, "items");
+      
+      if (isInitial) {
+        setItems(transformedData);
+      } else {
+        setItems(prevItems => [...prevItems, ...transformedData]);
       }
       
-      try {
-        console.log("🔍 Fetching Try On History");
-        console.log("📧 User ID:", userId);
-        console.log("🔗 API URL:", `https://tryon-history.faishion.ai/history?user_id=${userId}`);
-        
-        setLoading(true);
-        const response = await axios.get(`https://tryon-history.faishion.ai/history?user_id=${userId}`);
-        
-        console.log("✅ Response received");
-        console.log("📦 Response status:", response.status);
-        console.log("📦 Response data:", response.data);
-        console.log("📊 Data type:", typeof response.data);
-        console.log("📊 Is array:", Array.isArray(response.data));
-        
-        // Handle nested data structure - API returns {data: [...]}
-        const responseData = response.data.data || response.data;
-        console.log("📦 Extracted data:", responseData);
-        console.log("📊 Extracted is array:", Array.isArray(responseData));
-        console.log("📊 Extracted length:", Array.isArray(responseData) ? responseData.length : 'not an array');
-        
-        const dataArray = Array.isArray(responseData) ? responseData : [];
-        console.log("📦 Setting items:", dataArray.length, "items");
-        
-        if (dataArray.length > 0) {
-          console.log("📋 Sample item structure:", JSON.stringify(dataArray[0], null, 2));
-        }
-        
-        // Transform API data to match HistoryItem interface
-        const transformedData = dataArray.map((item: any, index: number) => ({
-          record_id: item.productInfo?.product_url || `item-${index}`,
-          result_image_url: item.tryOnImages?.[0]?.url || item.tryOnImages?.[0] || '',
-          timestamp: item.latestTryOnDate || new Date().toISOString(),
-          product_info: {
-            brand_name: item.productInfo?.brand_name || 'Unknown Brand',
-            product_name: item.productInfo?.product_name || 'Unknown Product',
-            price: item.productInfo?.price || 0,
-            currency: item.productInfo?.currency || '$'
-          }
-        }));
+      // Update pagination state
+      setSkip(currentSkip + LIMIT);
+      setHasMore(transformedData.length === LIMIT);
+      setError(null);
+      
+      console.log("📊 Pagination updated - Skip:", currentSkip + LIMIT, "HasMore:", transformedData.length === LIMIT);
+      
+    } catch (e: any) {
+      console.error("❌ Failed to fetch wardrobe history");
+      console.error("❌ Error message:", e.message);
+      console.error("❌ Error response:", e.response?.data);
+      console.error("❌ Error status:", e.response?.status);
+      setError("Failed to load your wardrobe. Please try again.");
+    } finally {
+      setLoading(false);
+      setLoadingMore(false);
+    }
+  };
 
-        console.log("✅ Transformed data ready:", transformedData.length, "items");
-        
-        setItems(transformedData);
-        setError(null);
-      } catch (e: any) {
-        console.error("❌ Failed to fetch wardrobe history");
-        console.error("❌ Error message:", e.message);
-        console.error("❌ Error response:", e.response?.data);
-        console.error("❌ Error status:", e.response?.status);
-        console.error("❌ Full error:", e);
-        setError("Failed to load your wardrobe. Please try again.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchHistory();
-  }, [userId]);
+  const loadMoreHistory = () => {
+    if (!loadingMore && hasMore) {
+      console.log("🔄 Loading more items...");
+      fetchHistory(false);
+    }
+  };
 
   const sortedItems = useMemo(() => {
     const sorted = [...items];
@@ -123,6 +155,17 @@ export default function WardrobeScreen() {
             <Text>{option}</Text>
           </TouchableOpacity>
         ))}
+      </View>
+    );
+  };
+
+  const renderFooter = () => {
+    if (!loadingMore) return null;
+    
+    return (
+      <View style={styles.footerLoader}>
+        <ActivityIndicator size="small" color="#6366f1" />
+        <Text style={styles.footerText}>Loading more items...</Text>
       </View>
     );
   };
@@ -173,6 +216,9 @@ export default function WardrobeScreen() {
         numColumns={2}
         contentContainerStyle={styles.listContainer}
         showsVerticalScrollIndicator={false}
+        onEndReached={loadMoreHistory}
+        onEndReachedThreshold={0.5}
+        ListFooterComponent={renderFooter}
       />
     </View>
   );
@@ -262,5 +308,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8, 
     paddingTop: 8,
     paddingBottom: 20
+  },
+  footerLoader: {
+    paddingVertical: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  footerText: {
+    marginTop: 8,
+    fontSize: 14,
+    color: '#6b7280',
   },
 });
