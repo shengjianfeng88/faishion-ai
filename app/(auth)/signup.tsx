@@ -9,8 +9,6 @@ import { styles } from "@/styles/auth.styles";
 export default function SignUpScreen() {
   const router = useRouter();
 
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPass, setShowPass] = useState(false);
@@ -52,18 +50,6 @@ export default function SignUpScreen() {
 
         {/* Input Fields */}
         <View style={styles.inputGroup}>
-          <TextInput
-            style={styles.input}
-            placeholder="First name"
-            value={firstName}
-            onChangeText={setFirstName}
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Last name"
-            value={lastName}
-            onChangeText={setLastName}
-          />
           <TextInput
             style={styles.input}
             placeholder="Email"
