@@ -116,6 +116,13 @@ export default function Chatbot() {
           p: {
             marginVertical: 4,
           },
+          img: {
+            width: 200,
+            height: 280,
+            objectFit: 'contain',
+            borderRadius: 8,
+            marginVertical: 8,
+          },
         }}
         renderersProps={{
           a: {
