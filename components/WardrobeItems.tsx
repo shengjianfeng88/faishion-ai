@@ -3,7 +3,7 @@ import { View, Text, Image, StyleSheet, Dimensions } from 'react-native';
 import { HistoryItem } from '../app/(tabs)/tryonHistory'; // Import the type
 
 const { width } = Dimensions.get('window');
-const itemWidth = (width / 2) - 16; // 2 columns with some padding
+const itemWidth = (width / 2) - 24; // 2 columns with some padding
 
 interface WardrobeItemProps {
   item: HistoryItem;
