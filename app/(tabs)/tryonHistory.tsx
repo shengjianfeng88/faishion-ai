@@ -214,7 +214,7 @@ export default function WardrobeScreen() {
         renderItem={({ item }) => <WardrobeItem item={item} />}
         keyExtractor={(item) => item.record_id}
         numColumns={2}
-        contentContainerStyle={styles.listContainer}
+        contentContainerStyle={[styles.listContainer, { paddingBottom: 100 }]}
         showsVerticalScrollIndicator={false}
         onEndReached={loadMoreHistory}
         onEndReachedThreshold={0.5}
