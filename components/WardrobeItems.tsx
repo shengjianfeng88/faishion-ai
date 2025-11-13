@@ -3,7 +3,7 @@ import { View, Text, Image, StyleSheet, Dimensions } from 'react-native';
 import { HistoryItem } from '../app/(tabs)/tryonHistory'; // Import the type
 
 const { width } = Dimensions.get('window');
-const itemWidth = (width / 2) - 16; // 2 columns with some padding
+const itemWidth = (width / 2) - 24; // 2 columns with some padding
 
 interface WardrobeItemProps {
   item: HistoryItem;
@@ -22,7 +22,7 @@ const WardrobeItem: React.FC<WardrobeItemProps> = ({ item }) => {
           {item.product_info.brand_name} - {item.product_info.product_name}
         </Text>
         <Text style={styles.priceText}>
-          {item.product_info.currency}{item.product_info.price.toFixed(2)} - Size M
+          {item.product_info.currency}{Math.floor(item.product_info.price)}
         </Text>
       </View>
     </View>

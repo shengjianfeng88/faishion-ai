@@ -1,10 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { View, Text, StyleSheet, FlatList, ActivityIndicator, TouchableOpacity, Image } from 'react-native';
 import axios from 'axios';
-import { useAuth } from '../../context/AuthContext'; // Make sure path is correct
-import WardrobeItem from '../../components/WardrobeItems'; // We will create this next
+import { useAuth } from '../../context/AuthContext';
+import WardrobeItem from '../../components/WardrobeItems';
 
-// Define a type for a single item from your API
 export interface HistoryItem {
   record_id: string;
   result_image_url: string;
@@ -22,37 +21,111 @@ export default function WardrobeScreen() {
   const [items, setItems] = useState<HistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
-  // State for sorting
-  const [sortOption, setSortOption] = useState('Most Recent'); // 'Most Recent', 'Price: Low to High', etc.
+  const [sortOption, setSortOption] = useState('Most Recent');
   const [showSortOptions, setShowSortOptions] = useState(false);
+  
+  // Pagination state
+  const [skip, setSkip] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+
+  const LIMIT = 10; // Items per page
 
   useEffect(() => {
-    const fetchHistory = async () => {
-      if (!userId) {
-        setLoading(false);
-        setError("User not logged in.");
-        return;
-      }
-      try {
-        setLoading(true);
-        const response = await axios.get(`https://tryon-history.faishion.ai/history?user_id=${userId}`);
-        setItems(response.data);
-        setError(null);
-      } catch (e) {
-        console.error("Failed to fetch wardrobe history:", e);
-        setError("Failed to load your wardrobe. Please try again.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchHistory();
+    fetchHistory(true);
   }, [userId]);
 
-  // Sort the items based on the selected option
+  const fetchHistory = async (isInitial: boolean = false) => {
+    if (!userId) {
+      console.log("❌ No userId found");
+      setLoading(false);
+      setError("User not logged in.");
+      return;
+    }
+
+    // Don't fetch if already loading more or no more items
+    if (!isInitial && (loadingMore || !hasMore)) {
+      return;
+    }
+    
+    try {
+      const currentSkip = isInitial ? 0 : skip;
+      
+      console.log("🔍 Fetching Try On History");
+      console.log("📧 User ID:", userId);
+      console.log("📄 Skip:", currentSkip, "Limit:", LIMIT);
+      console.log("🔗 API URL:", `https://tryon-history.faishion.ai/history?user_id=${userId}&skip=${currentSkip}&limit=${LIMIT}`);
+      
+      if (isInitial) {
+        setLoading(true);
+        setSkip(0);
+        setHasMore(true);
+      } else {
+        setLoadingMore(true);
+      }
+
+      const response = await axios.get(
+        `https://tryon-history.faishion.ai/history?user_id=${userId}&skip=${currentSkip}&limit=${LIMIT}`
+      );
+      
+      console.log("✅ Response received");
+      console.log("📦 Response status:", response.status);
+      
+      // Handle nested data structure - API returns {data: [...]}
+      const responseData = response.data.data || response.data;
+      const dataArray = Array.isArray(responseData) ? responseData : [];
+      
+      console.log("📦 Received items:", dataArray.length);
+      
+      // Transform API data to match HistoryItem interface
+      const transformedData = dataArray.map((item: any, index: number) => ({
+        record_id: item.productInfo?.product_url || `item-${currentSkip + index}`,
+        result_image_url: item.tryOnImages?.[0]?.url || item.tryOnImages?.[0] || '',
+        timestamp: item.latestTryOnDate || new Date().toISOString(),
+        product_info: {
+          brand_name: item.productInfo?.brand_name || 'Unknown Brand',
+          product_name: item.productInfo?.product_name || 'Unknown Product',
+          price: item.productInfo?.price || 0,
+          currency: item.productInfo?.currency || '$'
+        }
+      }));
+
+      console.log("✅ Transformed data ready:", transformedData.length, "items");
+      
+      if (isInitial) {
+        setItems(transformedData);
+      } else {
+        setItems(prevItems => [...prevItems, ...transformedData]);
+      }
+      
+      // Update pagination state
+      setSkip(currentSkip + LIMIT);
+      setHasMore(transformedData.length === LIMIT);
+      setError(null);
+      
+      console.log("📊 Pagination updated - Skip:", currentSkip + LIMIT, "HasMore:", transformedData.length === LIMIT);
+      
+    } catch (e: any) {
+      console.error("❌ Failed to fetch wardrobe history");
+      console.error("❌ Error message:", e.message);
+      console.error("❌ Error response:", e.response?.data);
+      console.error("❌ Error status:", e.response?.status);
+      setError("Failed to load your wardrobe. Please try again.");
+    } finally {
+      setLoading(false);
+      setLoadingMore(false);
+    }
+  };
+
+  const loadMoreHistory = () => {
+    if (!loadingMore && hasMore) {
+      console.log("🔄 Loading more items...");
+      fetchHistory(false);
+    }
+  };
+
   const sortedItems = useMemo(() => {
-    const sorted = [...items]; // Create a copy to avoid mutating state
+    const sorted = [...items];
     switch (sortOption) {
       case 'Price: Low to High':
         return sorted.sort((a, b) => a.product_info.price - b.product_info.price);
@@ -86,28 +159,54 @@ export default function WardrobeScreen() {
     );
   };
 
+  const renderFooter = () => {
+    if (!loadingMore) return null;
+    
+    return (
+      <View style={styles.footerLoader}>
+        <ActivityIndicator size="small" color="#6366f1" />
+        <Text style={styles.footerText}>Loading more items...</Text>
+      </View>
+    );
+  };
+
   if (loading) {
-    return <View style={styles.centerContainer}><ActivityIndicator size="large" color="#6366f1" /></View>;
+    return (
+      <View style={styles.centerContainer}>
+        <ActivityIndicator size="large" color="#6366f1" />
+        <Text style={styles.loadingText}>Loading your wardrobe...</Text>
+      </View>
+    );
   }
 
   if (error) {
-    return <View style={styles.centerContainer}><Text style={styles.errorText}>{error}</Text></View>;
+    return (
+      <View style={styles.centerContainer}>
+        <Text style={styles.errorText}>{error}</Text>
+      </View>
+    );
+  }
+
+  if (items.length === 0) {
+    return (
+      <View style={styles.centerContainer}>
+        <Text style={styles.emptyText}>No try-on history yet</Text>
+        <Text style={styles.emptySubtext}>Your try-on history will appear here</Text>
+      </View>
+    );
   }
 
   return (
     <View style={styles.container}>
-      {/* Header with Search and Filter */}
       <View style={styles.header}>
         <View style={styles.searchBar}>
-            <Text style={styles.searchText}>Search for an item</Text>
+          <Text style={styles.searchText}>Search for an item</Text>
         </View>
         <TouchableOpacity onPress={() => setShowSortOptions(!showSortOptions)}>
-            {/* Filter Icon placeholder */}
-            <View style={styles.filterIcon} />
+          <View style={styles.filterIcon} />
         </TouchableOpacity>
       </View>
 
-      {/* Conditionally render sort options */}
       {showSortOptions && renderSortOptions()}
 
       <FlatList
@@ -115,22 +214,109 @@ export default function WardrobeScreen() {
         renderItem={({ item }) => <WardrobeItem item={item} />}
         keyExtractor={(item) => item.record_id}
         numColumns={2}
-        contentContainerStyle={styles.listContainer}
+        contentContainerStyle={[styles.listContainer, { paddingBottom: 100 }]}
         showsVerticalScrollIndicator={false}
+        onEndReached={loadMoreHistory}
+        onEndReachedThreshold={0.5}
+        ListFooterComponent={renderFooter}
       />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f8f9fa' },
-  centerContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  errorText: { color: 'red', fontSize: 16 },
-  header: { flexDirection: 'row', alignItems: 'center', padding: 15, borderBottomWidth: 1, borderBottomColor: '#eee' },
-  searchBar: { flex: 1, height: 40, backgroundColor: '#fff', borderRadius: 8, justifyContent: 'center', paddingLeft: 15, marginRight: 10, borderWidth: 1, borderColor: '#ddd' },
-  searchText: { color: '#aaa' },
-  filterIcon: { width: 24, height: 24, backgroundColor: '#ccc' }, // Placeholder
-  sortDropdown: { position: 'absolute', top: 70, right: 15, backgroundColor: 'white', borderRadius: 8, padding: 10, zIndex: 1, borderWidth: 1, borderColor: '#ddd', elevation: 5 },
-  sortOption: { paddingVertical: 8 },
-  listContainer: { paddingHorizontal: 8, paddingTop: 8 },
+  container: { 
+    flex: 1, 
+    backgroundColor: '#f8f9fa' 
+  },
+  centerContainer: { 
+    flex: 1, 
+    justifyContent: 'center', 
+    alignItems: 'center',
+    padding: 20
+  },
+  errorText: { 
+    color: '#dc2626', 
+    fontSize: 16,
+    textAlign: 'center',
+    fontWeight: '500'
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 14,
+    color: '#6b7280'
+  },
+  emptyText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#374151',
+    marginBottom: 8
+  },
+  emptySubtext: {
+    fontSize: 14,
+    color: '#6b7280',
+    textAlign: 'center'
+  },
+  header: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    padding: 15, 
+    borderBottomWidth: 1, 
+    borderBottomColor: '#eee',
+    backgroundColor: '#fff'
+  },
+  searchBar: { 
+    flex: 1, 
+    height: 40, 
+    backgroundColor: '#f3f4f6', 
+    borderRadius: 8, 
+    justifyContent: 'center', 
+    paddingLeft: 15, 
+    marginRight: 10
+  },
+  searchText: { 
+    color: '#9ca3af',
+    fontSize: 14
+  },
+  filterIcon: { 
+    width: 24, 
+    height: 24, 
+    backgroundColor: '#d1d5db',
+    borderRadius: 4
+  },
+  sortDropdown: { 
+    position: 'absolute', 
+    top: 70, 
+    right: 15, 
+    backgroundColor: 'white', 
+    borderRadius: 8, 
+    padding: 10, 
+    zIndex: 1, 
+    borderWidth: 1, 
+    borderColor: '#e5e7eb',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 5
+  },
+  sortOption: { 
+    paddingVertical: 10,
+    paddingHorizontal: 8
+  },
+  listContainer: { 
+    paddingHorizontal: 8, 
+    paddingTop: 8,
+    paddingBottom: 20
+  },
+  footerLoader: {
+    paddingVertical: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  footerText: {
+    marginTop: 8,
+    fontSize: 14,
+    color: '#6b7280',
+  },
 });
