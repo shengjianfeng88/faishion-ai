@@ -14,7 +14,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import axios from "axios";
+import apiClient from "@/utils/apiClient";
 import { styles as authStyles } from "@/styles/auth.styles";
 
 const validateEmail = (email: string): boolean => {
@@ -47,7 +47,7 @@ export default function ForgotPasswordScreen() {
       console.log("🔐 Sending password reset request");
       console.log("📧 Email:", email.trim());
       
-      await axios.post("https://api-auth.faishion.ai/v1/auth/forgot-password", {
+      await apiClient.post("/auth/forgot-password", {
         email: email.trim().toLowerCase(),
       });
 
