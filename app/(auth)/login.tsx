@@ -16,25 +16,17 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import axios from 'axios';
 import { styles } from "@/styles/auth.styles";
 import { useAuth } from '../../context/AuthContext'; // 👈 Import useAuth
 
 // Import packages for Google Sign-In
 import * as Google from "expo-auth-session/providers/google";
 import * as WebBrowser from "expo-web-browser";
+import apiClient from "@/utils/apiClient";
 
 // This is necessary for the auth flow to work correctly on mobile
 WebBrowser.maybeCompleteAuthSession();
 
-// Create axios instance
-const apiClient = axios.create({
-  baseURL: 'https://api-auth.faishion.ai/v1',
-  timeout: 10000,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
 
 // Email validation function
 const validateEmail = (email: string): boolean => {
