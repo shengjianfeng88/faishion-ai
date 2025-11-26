@@ -1,23 +1,23 @@
-import React, { useState, useEffect } from "react";
+import { styles } from "@/styles/auth.styles";
+import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import axios from 'axios';
+import { LinearGradient } from "expo-linear-gradient";
+import { useRouter } from "expo-router";
+import React, { useEffect, useState } from "react";
 import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
+  ActivityIndicator,
+  Keyboard,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  Keyboard,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
   TouchableWithoutFeedback,
-  ActivityIndicator,
+  View,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
-import { useRouter } from "expo-router";
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import axios from 'axios';
-import { styles } from "@/styles/auth.styles";
 import { useAuth } from '../../context/AuthContext'; // 👈 Import useAuth
 
 // Import packages for Google Sign-In
@@ -43,9 +43,9 @@ const validateEmail = (email: string): boolean => {
 };
 
 export default function LoginScreen() {
-    const { login } = useAuth(); // 👈 Get the login function from context
+  const { login } = useAuth(); // 👈 Get the login function from context
 
-    const router = useRouter();
+  const router = useRouter();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -83,7 +83,7 @@ export default function LoginScreen() {
     try {
       const accessToken = await AsyncStorage.getItem('accessToken');
       if (accessToken) {
-        router.replace("/(tabs)");
+        router.replace("/(tabs)/homepage");
       }
     } catch (error) {
       console.error("Error checking auth status:", error);
@@ -101,7 +101,7 @@ export default function LoginScreen() {
       await AsyncStorage.setItem('accessToken', response.data.accessToken);
       await AsyncStorage.setItem('userId', response.data.userId);
 
-      router.replace("/(tabs)");
+      router.replace("/(tabs)/homepage");
     } catch (err: any) {
       console.error("Google Login error:", err);
       let errorMessage = "Google authentication failed. Please try again.";
@@ -134,10 +134,10 @@ export default function LoginScreen() {
         rememberMe: true,
       });
 
-    //   await AsyncStorage.setItem('accessToken', response.data.accessToken);
-    //   await AsyncStorage.setItem('userId', response.data.userId);
+      //   await AsyncStorage.setItem('accessToken', response.data.accessToken);
+      //   await AsyncStorage.setItem('userId', response.data.userId);
       await login(response.data.accessToken, response.data.userId);
-      router.replace("/(tabs)");
+      router.replace("/(tabs)/homepage");
     } catch (error: any) {
       console.error("Login error:", error);
       let errorMessage = "Login failed. Please try again.";
@@ -149,7 +149,7 @@ export default function LoginScreen() {
       setIsLoading(false);
     }
   };
-  
+
   const isFormValid = () => email.trim() && password && validateEmail(email.trim());
   const clearError = () => { if (error) setError(""); };
 
@@ -181,7 +181,7 @@ export default function LoginScreen() {
             <TouchableOpacity style={[styles.createBtn, (!isFormValid() || isLoading) && authStyles.createBtnDisabled]} onPress={handleLogin} disabled={!isFormValid() || isLoading}>
               {isLoading ? (<View style={authStyles.loadingContainer}><ActivityIndicator color="white" size="small" /><Text style={authStyles.loadingText}>Signing in...</Text></View>) : (<Text style={styles.createBtnText}>Log in</Text>)}
             </TouchableOpacity>
-            
+
             {/* --- Divider and Google Button --- */}
             <View style={authStyles.dividerRow}>
               <View style={authStyles.line} />

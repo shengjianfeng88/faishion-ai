@@ -1,8 +1,7 @@
-import React from 'react';
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { Tabs } from 'expo-router';
+import React from 'react';
 import { View } from 'react-native';
-import { Ionicons } from "@expo/vector-icons";
-import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 const ICON_SIZE = 30;
 
@@ -21,7 +20,7 @@ export default function TabLayout() {
           elevation: 0,
           height: 100,
           paddingTop: 16,
-          borderTopLeftRadius: 26, 
+          borderTopLeftRadius: 26,
           borderTopRightRadius: 26,
         },
         tabBarItemStyle: {
@@ -32,7 +31,7 @@ export default function TabLayout() {
     >
       {/* Home Tab */}
       <Tabs.Screen
-        name="index"
+        name="homepage"
         options={{
           tabBarIcon: ({ color, focused }) => (
             <View style={{ alignItems: 'center' }}>
@@ -75,7 +74,7 @@ export default function TabLayout() {
         options={{
           tabBarIcon: ({ color, focused }) => (
             <View style={{ alignItems: 'center' }}>
-               <MaterialCommunityIcons name="account" size={ICON_SIZE} color={color} />
+              <MaterialCommunityIcons name="account" size={ICON_SIZE} color={color} />
               {focused && <View style={styles.indicator} />}
             </View>
           ),

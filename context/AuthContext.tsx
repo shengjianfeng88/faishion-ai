@@ -1,6 +1,6 @@
-import React, { createContext, useState, useEffect, useContext, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
+import React, { createContext, ReactNode, useContext, useEffect, useState } from 'react';
 
 // 1. Define the shape of the context data
 interface AuthContextData {
@@ -50,7 +50,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       setUserId(newUserId);
       await AsyncStorage.setItem('accessToken', newAccessToken);
       await AsyncStorage.setItem('userId', newUserId);
-      router.replace("/(tabs)");
+      router.replace("/(tabs)/homepage");
     } catch (e) {
       console.error("Failed to save auth data", e);
     }

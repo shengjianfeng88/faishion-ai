@@ -1,16 +1,16 @@
+import { styles } from "@/styles/onboarding.styles";
+import { useRouter } from "expo-router";
 import React, { useRef, useState } from "react";
 import {
-  View,
-  Text,
-  Image,
-  ScrollView,
   Dimensions,
+  Image,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
+  ScrollView,
+  Text,
   TouchableOpacity,
-  StyleSheet,
+  View
 } from "react-native";
-import { useRouter } from "expo-router";
-import { styles } from "@/styles/onboarding.styles";
-import { NativeSyntheticEvent, NativeScrollEvent } from "react-native";
 
 const { width } = Dimensions.get("window");
 
@@ -61,7 +61,7 @@ export default function OnboardingScreen() {
             {index === slides.length - 1 && (
               <TouchableOpacity
                 style={styles.button}
-                onPress={() => router.replace("/(tabs)")}
+                onPress={() => router.replace("/(tabs)/homepage")}
               >
                 <Text style={styles.buttonText}>Get Started</Text>
               </TouchableOpacity>
